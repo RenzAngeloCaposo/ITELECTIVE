@@ -25,7 +25,7 @@ document.getElementById("register-form").addEventListener("submit", async (e) =>
       email: email
     });
     alert("Registration successful!");
-    window.location.href = "MainPage.html";
+    window.location.href = "index.html";
   } catch (error) {
     alert("Registration error: " + error.message);
   }
