@@ -1,1522 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ordenizer - Student Organizer</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-  <style>
-    /* Reset and base */
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-    body, html {
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-      color: #e0e7ff;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+    <meta charset="utf-8"/>
+    <meta content="width=device-width,initial-scale=1" name="viewport"/>
+    <title>Ordenizer - Student Organizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+    <link href="MainPage.css" rel="stylesheet"/>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
-    /* Layout */
-    header {
-      background: rgba(30, 41, 59, 0.95);
-      padding: 1rem 2rem;
-      font-weight: 700;
-      font-size: 1.75rem;
-      display: flex;
-      align-items: center;
-      border-bottom: 1px solid #334155;
-      user-select: none;
-      color: #38bdf8;
-      box-shadow: 0 2px 6px rgb(23 41 63 / 0.7);
-    }
-    main {
-      display: flex;
-      flex: 1;
-      height: 0; /* for flexbox */
-      overflow: hidden;
-      background: #1e293b;
-    }
-    nav.sidebar {
-      width: 280px;
-      background: rgba(22, 28, 38, 0.95);
-      border-right: 1px solid #334155;
-      display: flex;
-      flex-direction: column;
-      padding-top: 1rem;
-      user-select: none;
-      overflow-y: auto;
-    }
-    nav.sidebar::-webkit-scrollbar {
-      width: 8px;
-    }
-    nav.sidebar::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 8px;
-    }
-    nav.sidebar button {
-      background: none;
-      border: none;
-      color: #94a3b8;
-      font-size: 1.1rem;
-      padding: 14px 20px;
-      text-align: left;
-      width: 100%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-left: 4px solid transparent;
-      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-    }
-    nav.sidebar button.active {
-      background: #334155;
-      color: #38bdf8;
-      border-left-color: #38bdf8;
-      font-weight: 700;
-    }
-    nav.sidebar button:hover {
-      background: #475569;
-      color: #60a5fa;
-    }
-    nav.sidebar button .material-icons {
-      font-size: 20px;
-    }
+        const firebaseConfig = {
+            apiKey: "AIzaSyAnJiOYAaA8ngYLZb0_NPZqTDyVVbXNSaY",
+            authDomain: "ordinizer-9698d.firebaseapp.com",
+            databaseURL: "https://ordinizer-9698d-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ordinizer-9698d",
+            storageBucket: "ordinizer-9698d.appspot.com",
+            messagingSenderId: "360013646683",
+            appId: "1:360013646683:web:8fe32f3ac44a69949ba87e"
+        };
 
-    section.content {
-      flex: 1;
-      padding: 24px 32px;
-      overflow-y: auto;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      backdrop-filter: blur(15px);
-      background: rgba(30, 41, 59, 0.7);
-      border-radius: 16px 0 0 16px;
-    }
-    section.content::-webkit-scrollbar {
-      width: 8px;
-    }
-    section.content::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 8px;
-    }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
 
-    h2 {
-      color: #38bdf8;
-      font-weight: 700;
-      margin-bottom: 16px;
-      font-size: 2rem;
-      letter-spacing: 0.05em;
-      user-select:none;
-    }
-    .subheading {
-      font-weight: 600;
-      color: #94a3b8;
-      margin-bottom: 12px;
-      font-size: 1.1rem;
-    }
+        // Make accessible from MainPage.js
+        window.firebaseApp = app;
+        window.firebaseAuth = auth;
+        window.firebaseDB = db;
 
-    /* Buttons */
-    button.btn {
-      background: #2563eb;
-      color: white;
-      border-radius: 12px;
-      border: none;
-      padding: 12px 22px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      box-shadow: 0 0 6px rgba(37, 99, 235, 0.6);
-      user-select: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    button.btn:focus-visible {
-      outline: 2px solid #38bdf8;
-      outline-offset: 2px;
-    }
-    button.btn:hover:not(:disabled) {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.8);
-    }
-    button.btn:disabled {
-      cursor: not-allowed;
-      background: #475569;
-      box-shadow: none;
-      opacity: 0.6;
-    }
-
-    /* Inputs and forms */
-    input[type="text"], input[type="number"], input[type="email"], select, textarea {
-      background: #0f172a;
-      color: #f1f5f9;
-      border: 1px solid #334155;
-      border-radius: 10px;
-      padding: 0.6rem 1rem;
-      font-size: 1rem;
-      transition: border-color 0.3s ease;
-      width: 100%;
-      margin-bottom: 16px;
-      font-family: 'Inter', sans-serif;
-      resize: vertical;
-    }
-    input[type="text"]:focus, input[type="number"]:focus, input[type="email"]:focus, select:focus, textarea:focus {
-      border-color: #38bdf8;
-      outline: none;
-      box-shadow: 0 0 8px #38bdf8aa;
-    }
-    label {
-      font-weight: 600;
-      margin-bottom: 6px;
-      display: block;
-      color: #94a3b8;
-      user-select:none;
-    }
-
-    /* Scroll containers in content */
-    .scroll-container {
-      overflow-y: auto;
-      max-height: 60vh;
-      border: 1px solid #334155;
-      border-radius: 14px;
-      padding: 12px 16px;
-      background: #1e293bcc;
-      box-shadow: 0 0 16px rgba(0,0,0,0.6);
-      user-select: none;
-    }
-
-    /* Toast notifications */
-    #toast {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: #2563ebcc;
-      color: #e0e7ff;
-      padding: 14px 24px;
-      border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.7);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s ease;
-      font-weight: 700;
-      user-select: none;
-      z-index: 9999;
-    }
-    #toast.show {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    /* Specific Components */
-
-    /* To-Do list */
-    .todo-list {
-      list-style: none;
-      padding-left: 0;
-      margin-top: 0;
-      max-height: 350px;
-      overflow-y: auto;
-    }
-    .todo-list::-webkit-scrollbar {
-      height: 8px;
-    }
-    .todo-list::-webkit-scrollbar-thumb {
-      background: #374151;
-      border-radius: 6px;
-    }
-    .todo-list li {
-      background: rgba(37, 99, 235, 0.2);
-      border-radius: 14px;
-      margin-bottom: 12px;
-      padding: 14px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: background-color 0.3s ease;
-      cursor: pointer;
-      user-select:none;
-      box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
-    }
-    .todo-list li.completed {
-      text-decoration: line-through;
-      color: #94a3b8;
-      background: rgba(99, 179, 237, 0.3);
-      box-shadow: none;
-      cursor: default;
-    }
-    .todo-list li:hover:not(.completed) {
-      background: rgba(37, 99, 235, 0.4);
-    }
-    .todo-list li .material-icons {
-      cursor: pointer;
-      color: #38bdf8;
-      transition: color 0.3s ease;
-      user-select:none;
-    }
-    .todo-list li .material-icons:hover {
-      color: #60a5fa;
-    }
-
-    /* Timer aesthetic */
-    .timer-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-    .timer-display {
-      font-family: 'Inter', sans-serif;
-      font-size: 4rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #38bdf8, #2563eb);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      user-select:none;
-      letter-spacing: 0.15em;
-      font-variant-numeric: tabular-nums;
-      text-shadow: 0 0 6px rgba(56, 189, 248, 0.7);
-    }
-    .timer-controls {
-      display: flex;
-      gap: 16px;
-    }
-    .timer-controls button {
-      min-width: 100px;
-      font-size: 1.1rem;
-    }
-    .timer-add-input {
-      width: 80px;
-      text-align: center;
-    }
-
-    /* Flashcard maker */
-    .flashcard-container {
-      perspective: 1200px;
-      width: 320px;
-      height: 220px;
-      margin: 20px auto;
-      user-select:none;
-    }
-    .flashcard {
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
-      border-radius: 18px;
-      background: linear-gradient(135deg, #60a5fa, #2563eb);
-      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.6);
-      color: white;
-      font-weight: 700;
-      font-size: 1.3rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      text-align: center;
-      transform-style: preserve-3d;
-      transition: transform 0.6s cubic-bezier(0.4,0,0.2,1);
-      position: relative;
-      user-select:none;
-    }
-    .flashcard.flipped {
-      transform: rotateY(180deg);
-    }
-    .flashcard .front, .flashcard .back {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden;
-      border-radius: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .flashcard .back {
-      background: linear-gradient(135deg, #2563eb, #1e40af);
-      transform: rotateY(180deg);
-      font-size: 1.2rem;
-      padding: 18px;
-      user-select:none;
-    }
-    .flashcard-form {
-      margin-top: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      width: 320px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .flashcard-form textarea {
-      min-height: 60px;
-      max-height: 120px;
-    }
-
-    /* Class schedule */
-    .class-schedule {
-      max-height: 350px;
-      overflow-y: auto;
-      background: #0f172a;
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 8px 24px rgba(13, 27, 46, 0.95);
-      user-select:none;
-    }
-    .schedule-item {
-      background: #2563ebaa;
-      border-radius: 14px;
-      margin: 12px 0;
-      padding: 12px 18px;
-      box-shadow: 0 0 10px rgba(37, 99, 235, 0.6);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      color: #e0e7ff;
-      font-weight: 600;
-    }
-    .schedule-item .day {
-      font-size: 1rem;
-      color: #38bdf8;
-    }
-    .schedule-item .time, .schedule-item .location {
-      font-weight: 500;
-      font-size: 0.95rem;
-      color: #94a3b8;
-    }
-
-    /* Quiz organizer and major exams tables */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-      user-select:none;
-    }
-    th, td {
-      padding: 10px 12px;
-      border-bottom: 1px solid #334155;
-      color: #cbd5e1;
-      font-weight: 600;
-      text-align: left;
-    }
-    th {
-      color: #38bdf8;
-      background: #1e293bcc;
-      position: sticky;
-      top: 0;
-      user-select:none;
-    }
-    tr:hover {
-      background: #334155aa;
-    }
-    .table-actions {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-    }
-    .table-actions button {
-      min-width: 36px;
-      font-size: 16px;
-      padding: 4px 6px;
-      border-radius: 8px;
-    }
-
-    /* Transitions for show/hide sections */
-    .tab-content {
-      opacity: 0;
-      transform: translateY(12px);
-      max-height: 0;
-      overflow: hidden;
-      transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
-    }
-    .tab-content.active {
-      opacity: 1;
-      max-height: 100vh;
-      transform: translateY(0);
-      overflow: auto;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      nav.sidebar {
-        width: 72px;
-        padding: 0.5rem 0;
-      }
-      nav.sidebar button {
-        font-size: 0;
-        padding: 12px 0;
-        justify-content: center;
-        border-left: none;
-      }
-      nav.sidebar button.active {
-        border-left: none;
-        border-top: 4px solid #38bdf8;
-      }
-      nav.sidebar button .material-icons {
-        font-size: 28px;
-      }
-      section.content {
-        padding: 16px 20px;
-        border-radius: 0;
-      }
-      h2 {
-        font-size: 1.5rem;
-      }
-      .flashcard-container {
-        width: 90vw;
-        height: 180px;
-      }
-      .flashcard-form {
-        width: 90vw;
-      }
-    }
-  </style>
+        // Redirect if user is not logged in
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+            }
+        });
+    </script>
 </head>
 <body>
-  <header>Ordenizer</header>
-  <main>
-    <nav class="sidebar" aria-label="Main navigation">
-      <button id="btn-todo" class="active" aria-controls="tab-todo" aria-selected="true" role="tab" tabindex="0" title="To-Do List">
-        <span class="material-icons" aria-hidden="true">check_circle</span> To-Do
-      </button>
-      <button id="btn-gwa" aria-controls="tab-gwa" role="tab" tabindex="-1" title="GWA Calculator">
-        <span class="material-icons" aria-hidden="true">calculate</span> GWA
-      </button>
-      <button id="btn-timer" aria-controls="tab-timer" role="tab" tabindex="-1" title="Timer">
-        <span class="material-icons" aria-hidden="true">timer</span> Timer
-      </button>
-      <button id="btn-flashcards" aria-controls="tab-flashcards" role="tab" tabindex="-1" title="Flashcards">
-        <span class="material-icons" aria-hidden="true">auto_stories</span> Flashcards
-      </button>
-      <button id="btn-topics" aria-controls="tab-topics" role="tab" tabindex="-1" title="Topics Encoder">
-        <span class="material-icons" aria-hidden="true">subject</span> Topics
-      </button>
-      <button id="btn-schedule" aria-controls="tab-schedule" role="tab" tabindex="-1" title="Class Schedule">
-        <span class="material-icons" aria-hidden="true">event</span> Schedule
-      </button>
-      <button id="btn-quiz" aria-controls="tab-quiz" role="tab" tabindex="-1" title="Quiz Organizer">
-        <span class="material-icons" aria-hidden="true">quiz</span> Quiz
-      </button>
-      <button id="btn-exams" aria-controls="tab-exams" role="tab" tabindex="-1" title="Major Exams">
-        <span class="material-icons" aria-hidden="true">school</span> Exams
-      </button>
-    </nav>
-
-    <section class="content" tabindex="0">
-      <!-- To-Do List -->
-      <div id="tab-todo" class="tab-content active" role="tabpanel" aria-labelledby="btn-todo">
-        <h2>To-Do List</h2>
-        <form id="todo-form" aria-label="Add new To-Do item">
-          <label for="todo-input">New task</label>
-          <input type="text" id="todo-input" autocomplete="off" placeholder="Enter new task..." aria-required="true" />
-          <button type="submit" class="btn" aria-label="Add Task">
-            <span class="material-icons" aria-hidden="true">add</span> Add
-          </button>
-        </form>
-        <ul id="todo-list" class="todo-list" aria-live="polite" aria-relevant="additions removals" aria-label="To-Do items list"></ul>
-        <button id="clear-completed" class="btn" aria-label="Clear completed tasks" style="margin-top:8px;">Clear Completed</button>
-      </div>
-
-      <!-- GWA Calculator -->
-      <div id="tab-gwa" class="tab-content" role="tabpanel" aria-labelledby="btn-gwa">
-        <h2>GWA Calculator</h2>
-        <div id="gwa-form">
-          <form aria-label="Add a course grade">
-            <label for="course-name">Course Name</label>
-            <input type="text" id="course-name" autocomplete="off" placeholder="e.g., Math 101" aria-required="true" />
-
-            <label for="course-grade">Grade (1.0 - 5.0)</label>
-            <input type="number" id="course-grade" min="1" max="5" step="0.01" placeholder="e.g., 1.75" aria-required="true" />
-
-            <button type="submit" class="btn" aria-label="Add Course and Grade">
-              <span class="material-icons" aria-hidden="true">add</span> Add
+    <header>Ordenizer</header>
+    <main>
+        <nav aria-label="Main navigation" class="sidebar">
+            <button aria-controls="tab-todo" aria-selected="true" class="active" id="btn-todo" role="tab" tabindex="0" title="To-Do List">
+                <span aria-hidden="true" class="material-icons">check_circle</span> To-Do
             </button>
-          </form>
-        </div>
-        <div id="gwa-courses-container" style="margin-top:16px;">
-          <h3>Courses & Grades</h3>
-          <ul id="gwa-courses" class="todo-list" aria-live="polite" aria-label="Courses and grades list" style="max-height:250px; overflow-y:auto;"></ul>
-        </div>
-        <div style="margin-top: 16px;">
-          <strong>Your GWA:</strong> <span id="gwa-result" aria-live="polite">N/A</span>
-          <button id="clear-gwa" class="btn" style="margin-left: 16px;">Clear All</button>
-        </div>
-      </div>
-
-      <!-- Timer -->
-      <div id="tab-timer" class="tab-content" role="tabpanel" aria-labelledby="btn-timer">
-        <h2>Timer</h2>
-        <div class="timer-container" aria-label="Study timer">
-          <div class="timer-display" id="timer-display" aria-live="polite" aria-atomic="true" aria-relevant="text">00:00:00</div>
-          <div class="timer-controls">
-            <input type="number" id="timer-add-minutes" class="timer-add-input" aria-label="Add minutes" min="1" max="180" value="25" />
-            <button id="timer-add-btn" class="btn" aria-label="Add minutes to timer">Add</button>
-            <button id="timer-start-btn" class="btn" aria-label="Start or Pause Timer">Start/Pause</button>
-            <button id="timer-reset-btn" class="btn" aria-label="Reset Timer">Reset</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Flashcards -->
-      <div id="tab-flashcards" class="tab-content" role="tabpanel" aria-labelledby="btn-flashcards">
-        <h2>Flashcard Maker</h2>
-        <div class="flashcard-container" tabindex="0" aria-label="Flashcard" role="button" aria-pressed="false">
-          <div id="flashcard" class="flashcard" aria-live="polite">
-            <div class="front">Click to add question</div>
-            <div class="back">Click to add answer</div>
-          </div>
-        </div>
-        <form id="flashcard-form" class="flashcard-form" aria-label="Create flashcard">
-          <label for="flashcard-question">Question</label>
-          <textarea id="flashcard-question" placeholder="Enter question..." aria-required="true"></textarea>
-
-          <label for="flashcard-answer">Answer</label>
-          <textarea id="flashcard-answer" placeholder="Enter answer..." aria-required="true"></textarea>
-
-          <button type="submit" class="btn" aria-label="Add Flashcard">Add Flashcard</button>
-          <button type="button" id="flashcard-clear" class="btn" aria-label="Clear Flashcards" style="background: #dc2626;">Clear All</button>
-        </form>
-
-        <div style="margin-top: 24px;">
-          <h3>Flashcards</h3>
-          <ul id="flashcards-list" class="todo-list" aria-live="polite" aria-label="Flashcards list"></ul>
-        </div>
-      </div>
-
-      <!-- Topics Encoder -->
-      <div id="tab-topics" class="tab-content" role="tabpanel" aria-labelledby="btn-topics">
-        <h2>Topics Encoder</h2>
-        <form id="topics-form" aria-label="Add topics">
-          <label for="topic-title">Title</label>
-          <input type="text" id="topic-title" placeholder="Enter topic title..." aria-required="true" />
-          <label for="topic-content">Details</label>
-          <textarea id="topic-content" placeholder="Enter topic details..." aria-required="true"></textarea>
-          <button type="submit" class="btn" aria-label="Add Topic">Add Topic</button>
-        </form>
-        <div style="margin-top:16px;">
-          <h3>Topics List</h3>
-          <ul id="topics-list" class="todo-list" aria-live="polite" aria-label="Topics list"></ul>
-        </div>
-      </div>
-
-      <!-- Class Schedule -->
-      <div id="tab-schedule" class="tab-content" role="tabpanel" aria-labelledby="btn-schedule">
-        <h2>Class Schedule Maker</h2>
-        <form id="schedule-form" aria-label="Add class schedule">
-          <label for="class-name">Class Name</label>
-          <input type="text" id="class-name" placeholder="e.g., Math 101" aria-required="true" />
-          <label for="class-day">Day of Week</label>
-          <select id="class-day" aria-required="true" >
-            <option value="" disabled selected>Select day</option>
-            <option>Monday</option>
-            <option>Tuesday</option>
-            <option>Wednesday</option>
-            <option>Thursday</option>
-            <option>Friday</option>
-            <option>Saturday</option>
-            <option>Sunday</option>
-          </select>
-          <label for="class-time">Time</label>
-          <input type="text" id="class-time" placeholder="e.g., 9:00 AM - 10:30 AM" aria-required="true" />
-          <label for="class-location">Location</label>
-          <input type="text" id="class-location" placeholder="e.g., Room 302" />
-          <button type="submit" class="btn" aria-label="Add Class Schedule">Add Class</button>
-        </form>
-        <div style="margin-top: 24px;">
-          <h3>Class Schedules</h3>
-          <div id="schedule-list" class="class-schedule" aria-live="polite" aria-label="Class schedules list"></div>
-          <button id="clear-schedule" class="btn" aria-label="Clear All Class Schedules" style="margin-top: 12px;">Clear All</button>
-        </div>
-      </div>
-
-      <!-- Quiz Organizer -->
-      <div id="tab-quiz" class="tab-content" role="tabpanel" aria-labelledby="btn-quiz">
-        <h2>Quiz Organizer</h2>
-        <form id="quiz-form" aria-label="Add new quiz">
-          <label for="quiz-name">Quiz Name</label>
-          <input type="text" id="quiz-name" placeholder="e.g., Math Quiz 1" aria-required="true" />
-          <label for="quiz-date">Date & Time</label>
-          <input type="datetime-local" id="quiz-date" aria-required="true" />
-          <label for="quiz-class">Class Name</label>
-          <input type="text" id="quiz-class" placeholder="e.g., Math 101" />
-          <label for="quiz-email">Email for Reminder</label>
-          <input type="email" id="quiz-email" placeholder="Enter your email" aria-required="false" />
-          <button type="submit" class="btn" aria-label="Add Quiz">Add Quiz</button>
-        </form>
-        <div style="margin-top: 24px;">
-          <h3>Upcoming Quizzes</h3>
-          <table aria-live="polite" aria-label="Quiz schedule">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Date/Time</th>
-                <th>Class</th>
-                <th>Email Reminder</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="quiz-list"></tbody>
-          </table>
-          <button id="clear-quiz" class="btn" aria-label="Clear All Quizzes" style="margin-top: 12px;">Clear All</button>
-        </div>
-      </div>
-
-      <!-- Major Exams -->
-      <div id="tab-exams" class="tab-content" role="tabpanel" aria-labelledby="btn-exams">
-        <h2>Major Exams</h2>
-        <form id="exam-form" aria-label="Add major exam">
-          <label for="exam-name">Exam Name</label>
-          <input type="text" id="exam-name" placeholder="e.g., Final Exams" aria-required="true" />
-          <label for="exam-date">Date & Time</label>
-          <input type="datetime-local" id="exam-date" aria-required="true" />
-          <label for="exam-email">Email for Reminder</label>
-          <input type="email" id="exam-email" placeholder="Enter your email" />
-          <button type="submit" class="btn" aria-label="Add Exam">Add Exam</button>
-        </form>
-        <div style="margin-top: 24px;">
-          <h3>Upcoming Exams</h3>
-          <table aria-live="polite" aria-label="Major exams table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Date/Time</th>
-                <th>Email Reminder</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="exam-list"></tbody>
-          </table>
-          <button id="clear-exams" class="btn" aria-label="Clear All Exams" style="margin-top: 12px;">Clear All</button>
-        </div>
-      </div>
-    </section>
-  </main>
-  <div id="toast" role="alert" aria-live="assertive" aria-atomic="true"></div>
-
-  <script>
-    // Responsive and tab navigation logic
-    const tabs = {
-      todo: document.getElementById('tab-todo'),
-      gwa: document.getElementById('tab-gwa'),
-      timer: document.getElementById('tab-timer'),
-      flashcards: document.getElementById('tab-flashcards'),
-      topics: document.getElementById('tab-topics'),
-      schedule: document.getElementById('tab-schedule'),
-      quiz: document.getElementById('tab-quiz'),
-      exams: document.getElementById('tab-exams')
-    };
-    const buttons = {
-      todo: document.getElementById('btn-todo'),
-      gwa: document.getElementById('btn-gwa'),
-      timer: document.getElementById('btn-timer'),
-      flashcards: document.getElementById('btn-flashcards'),
-      topics: document.getElementById('btn-topics'),
-      schedule: document.getElementById('btn-schedule'),
-      quiz: document.getElementById('btn-quiz'),
-      exams: document.getElementById('btn-exams')
-    };
-
-    function activateTab(tabName) {
-      // Deactivate all tabs and buttons
-      Object.keys(tabs).forEach(t => {
-        tabs[t].classList.remove('active');
-        buttons[t].classList.remove('active');
-        buttons[t].setAttribute('aria-selected', 'false');
-        buttons[t].tabIndex = -1;
-      });
-      // Activate selected tab/button
-      tabs[tabName].classList.add('active');
-      buttons[tabName].classList.add('active');
-      buttons[tabName].setAttribute('aria-selected', 'true');
-      buttons[tabName].tabIndex = 0;
-      buttons[tabName].focus();
-    }
-
-    Object.entries(buttons).forEach(([key, btn]) => {
-      btn.addEventListener('click', () => activateTab(key));
-      btn.addEventListener('keydown', (ev) => {
-        if (ev.key === 'ArrowDown' || ev.key === 'ArrowRight') {
-          ev.preventDefault();
-          const keys = Object.keys(buttons);
-          let idx = keys.indexOf(key);
-          idx = (idx + 1) % keys.length;
-          buttons[keys[idx]].focus();
-        } else if (ev.key === "ArrowUp" || ev.key === "ArrowLeft") {
-          ev.preventDefault();
-          const keys = Object.keys(buttons);
-          let idx = keys.indexOf(key);
-          idx = (idx - 1 + keys.length) % keys.length;
-          buttons[keys[idx]].focus();
-        }
-      });
-    });
-
-    // Toast notification
-    const toastEl = document.getElementById('toast');
-    let toastTimeout;
-    function showToast(message) {
-      clearTimeout(toastTimeout);
-      toastEl.textContent = message;
-      toastEl.classList.add('show');
-      toastTimeout = setTimeout(() => {
-        toastEl.classList.remove('show');
-      }, 3000);
-    }
-
-    // STORAGE KEYS
-    const STORAGE_KEYS = {
-      todo: 'ordenizer_todo_items',
-      gwa: 'ordenizer_gwa_courses',
-      timer: 'ordenizer_timer',
-      flashcards: 'ordenizer_flashcards',
-      topics: 'ordenizer_topics',
-      schedule: 'ordenizer_schedule',
-      quiz: 'ordenizer_quizzes',
-      exams: 'ordenizer_exams'
-    };
-
-    // -------------- To-Do List --------------
-    const todoForm = document.getElementById('todo-form');
-    const todoInput = document.getElementById('todo-input');
-    const todoListEl = document.getElementById('todo-list');
-    const clearCompletedBtn = document.getElementById('clear-completed');
-
-    let todoItems = [];
-
-    function saveTodo() {
-      localStorage.setItem(STORAGE_KEYS.todo, JSON.stringify(todoItems));
-    }
-    function loadTodo() {
-      const data = localStorage.getItem(STORAGE_KEYS.todo);
-      todoItems = data ? JSON.parse(data) : [];
-    }
-    function renderTodo() {
-      todoListEl.innerHTML = '';
-      todoItems.forEach((item, i) => {
-        const li = document.createElement('li');
-        li.textContent = item.text;
-        li.className = item.completed ? 'completed' : '';
-        li.setAttribute('tabindex', '0');
-        li.setAttribute('role', 'checkbox');
-        li.setAttribute('aria-checked', item.completed);
-        li.addEventListener('click', () => toggleTodo(i));
-        li.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            toggleTodo(i);
-          }
-        });
-
-        // Delete icon
-        const delIcon = document.createElement('span');
-        delIcon.className = 'material-icons';
-        delIcon.textContent = 'delete';
-        delIcon.setAttribute('role', 'button');
-        delIcon.setAttribute('aria-label', 'Delete task');
-        delIcon.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          deleteTodo(i);
-        });
-        li.appendChild(delIcon);
-
-        todoListEl.appendChild(li);
-      });
-    }
-    function addTodo(text) {
-      todoItems.push({ text, completed: false });
-      saveTodo();
-      renderTodo();
-    }
-    function toggleTodo(index) {
-      todoItems[index].completed = !todoItems[index].completed;
-      saveTodo();
-      renderTodo();
-    }
-    function deleteTodo(index) {
-      todoItems.splice(index, 1);
-      saveTodo();
-      renderTodo();
-      showToast('Task deleted');
-    }
-    clearCompletedBtn.addEventListener('click', () => {
-      todoItems = todoItems.filter(item => !item.completed);
-      saveTodo();
-      renderTodo();
-      showToast('Completed tasks cleared');
-    });
-
-    todoForm.addEventListener('submit', (ev) => {
-      ev.preventDefault();
-      const text = todoInput.value.trim();
-      if (text) {
-        addTodo(text);
-        todoInput.value = '';
-        showToast('Task added');
-      }
-    });
-
-    // -------------- GWA Calculator --------------
-    const gwaForm = document.querySelector('#gwa-form form');
-    const gwaCoursesEl = document.getElementById('gwa-courses');
-    const gwaResultEl = document.getElementById('gwa-result');
-    const clearGwaBtn = document.getElementById('clear-gwa');
-
-    let gwaCourses = [];
-
-    function saveGwa() {
-      localStorage.setItem(STORAGE_KEYS.gwa, JSON.stringify(gwaCourses));
-    }
-    function loadGwa() {
-      const data = localStorage.getItem(STORAGE_KEYS.gwa);
-      gwaCourses = data ? JSON.parse(data) : [];
-    }
-    function renderGwa() {
-      gwaCoursesEl.innerHTML = '';
-      let totalGrades = 0;
-      let count = 0;
-
-      gwaCourses.forEach(({ course, grade }, index) => {
-        const li = document.createElement('li');
-        li.textContent = `${course}: ${grade.toFixed(2)}`;
-        li.className = 'todo-list-item';
-
-        // Delete icon for each course
-        const delBtn = document.createElement('span');
-        delBtn.className = 'material-icons';
-        delBtn.textContent = 'delete';
-        delBtn.setAttribute('role', 'button');
-        delBtn.setAttribute('aria-label', `Delete course ${course}`);
-        delBtn.style.cursor = 'pointer';
-        delBtn.addEventListener('click', () => {
-          gwaCourses.splice(index, 1);
-          saveGwa();
-          renderGwa();
-          showToast('Course removed');
-        });
-
-        li.style.padding = '10px 0';
-        li.style.display = 'flex';
-        li.style.justifyContent = 'space-between';
-        li.style.alignItems = 'center';
-        li.appendChild(delBtn);
-        gwaCoursesEl.appendChild(li);
-        totalGrades += grade;
-        count++;
-      });
-      let gwa = count ? (totalGrades / count).toFixed(3) : 'N/A';
-      gwaResultEl.textContent = gwa;
-    }
-
-    gwaForm.addEventListener('submit', (ev) => {
-      ev.preventDefault();
-      const courseInput = document.getElementById('course-name');
-      const gradeInput = document.getElementById('course-grade');
-      let course = courseInput.value.trim();
-      let grade = parseFloat(gradeInput.value);
-      if (!course || isNaN(grade) || grade < 1 || grade > 5) {
-        alert("Please enter valid course name and grade between 1.0 and 5.0.");
-        return;
-      }
-      gwaCourses.push({ course, grade });
-      saveGwa();
-      renderGwa();
-      courseInput.value = '';
-      gradeInput.value = '';
-      showToast('Course added');
-    });
-
-    clearGwaBtn.addEventListener('click', () => {
-      gwaCourses = [];
-      saveGwa();
-      renderGwa();
-      showToast('All courses removed');
-    });
-
-    // -------------- Timer --------------
-    const timerDisplay = document.getElementById('timer-display');
-    const timerAddMinutesInput = document.getElementById('timer-add-minutes');
-    const timerAddBtn = document.getElementById('timer-add-btn');
-    const timerStartBtn = document.getElementById('timer-start-btn');
-    const timerResetBtn = document.getElementById('timer-reset-btn');
-
-    let timerInterval = null;
-    let remainingSeconds = 0;
-    let timerRunning = false;
-
-    // Store in localStorage to persist timer state
-    function saveTimer() {
-      const timerData = {
-        remainingSeconds,
-        timerRunning,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(STORAGE_KEYS.timer, JSON.stringify(timerData));
-    }
-    function loadTimer() {
-      const data = localStorage.getItem(STORAGE_KEYS.timer);
-      if (!data) return;
-
-      try {
-        const obj = JSON.parse(data);
-        if (obj.timerRunning) {
-          // Calculate elapsed and update remainingSeconds on resume
-          const elapsed = (Date.now() - obj.timestamp) / 1000;
-          remainingSeconds = obj.remainingSeconds - elapsed;
-          if (remainingSeconds < 0) remainingSeconds = 0;
-          startTimer();
-        } else {
-          remainingSeconds = obj.remainingSeconds;
-          updateTimerDisplay();
-        }
-      } catch(e) {
-        console.warn('Error loading timer data', e);
-      }
-    }
-    function updateTimerDisplay() {
-      const hrs = Math.floor(remainingSeconds / 3600);
-      const mins = Math.floor((remainingSeconds % 3600) / 60);
-      const secs = Math.floor(remainingSeconds % 60);
-      timerDisplay.textContent =
-        `${hrs.toString().padStart(2, '0')}:` +
-        `${mins.toString().padStart(2, '0')}:` +
-        `${secs.toString().padStart(2, '0')}`;
-    }
-    function startTimer() {
-      if (timerRunning) return;
-      if (remainingSeconds === 0) {
-        showToast('Add time before starting timer');
-        return;
-      }
-      timerRunning = true;
-      saveTimer();
-      timerStartBtn.textContent = 'Pause';
-      timerStartBtn.setAttribute('aria-label', 'Pause Timer');
-
-      timerInterval = setInterval(() => {
-        if (remainingSeconds <= 0) {
-          clearInterval(timerInterval);
-          timerRunning = false;
-          updateTimerDisplay();
-          saveTimer();
-          timerStartBtn.textContent = 'Start';
-          timerStartBtn.setAttribute('aria-label', 'Start Timer');
-          showToast('Timer finished!');
-          return;
-        }
-        remainingSeconds--;
-        updateTimerDisplay();
-      }, 1000);
-    }
-    function pauseTimer() {
-      timerRunning = false;
-      clearInterval(timerInterval);
-      timerStartBtn.textContent = 'Start';
-      timerStartBtn.setAttribute('aria-label', 'Start Timer');
-      saveTimer();
-    }
-    timerAddBtn.addEventListener('click', () => {
-      let toAdd = parseInt(timerAddMinutesInput.value, 10);
-      if (isNaN(toAdd) || toAdd <= 0) {
-        alert('Please enter a positive number of minutes');
-        return;
-      }
-      remainingSeconds += toAdd * 60;
-      updateTimerDisplay();
-      saveTimer();
-      showToast(`Added ${toAdd} minute${toAdd > 1 ? 's' : ''}`);
-    });
-    timerStartBtn.addEventListener('click', () => {
-      if (timerRunning) {
-        pauseTimer();
-      } else {
-        startTimer();
-      }
-    });
-    timerResetBtn.addEventListener('click', () => {
-      pauseTimer();
-      remainingSeconds = 0;
-      updateTimerDisplay();
-      saveTimer();
-      showToast('Timer reset');
-    });
-
-    updateTimerDisplay();
-
-    // -------------- Flashcards --------------
-    const flashcardEl = document.getElementById('flashcard');
-    const flashcardContainer = document.querySelector('.flashcard-container');
-    const flashcardForm = document.getElementById('flashcard-form');
-    const flashcardQuestion = document.getElementById('flashcard-question');
-    const flashcardAnswer = document.getElementById('flashcard-answer');
-    const flashcardsList = document.getElementById('flashcards-list');
-    const flashcardClearBtn = document.getElementById('flashcard-clear');
-
-    let flashcards = [];
-    let currentFlashcardIndex = 0;
-    let isFront = true;
-
-    function saveFlashcards() {
-      localStorage.setItem(STORAGE_KEYS.flashcards, JSON.stringify(flashcards));
-    }
-    function loadFlashcards() {
-      const data = localStorage.getItem(STORAGE_KEYS.flashcards);
-      flashcards = data ? JSON.parse(data) : [];
-    }
-    function renderFlashcard(index) {
-      if (!flashcards.length) {
-        flashcardEl.querySelector('.front').textContent = 'Click to add question';
-        flashcardEl.querySelector('.back').textContent = 'Click to add answer';
-        isFront = true;
-        flashcardEl.classList.remove('flipped');
-        return;
-      }
-      if (index < 0) index = flashcards.length - 1;
-      if (index >= flashcards.length) index = 0;
-      currentFlashcardIndex = index;
-
-      const card = flashcards[index];
-      flashcardEl.querySelector('.front').textContent = card.question || 'No question';
-      flashcardEl.querySelector('.back').textContent = card.answer || 'No answer';
-      if (isFront) flashcardEl.classList.remove('flipped');
-      else flashcardEl.classList.add('flipped');
-    }
-    function renderFlashcardsList() {
-      flashcardsList.innerHTML = '';
-      flashcards.forEach((card, i) => {
-        const li = document.createElement('li');
-        li.textContent = card.question;
-        li.style.cursor = 'pointer';
-        li.setAttribute('tabindex', '0');
-        li.addEventListener('click', () => {
-          currentFlashcardIndex = i;
-          isFront = true;
-          renderFlashcard(currentFlashcardIndex);
-        });
-        li.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            currentFlashcardIndex = i;
-            isFront = true;
-            renderFlashcard(currentFlashcardIndex);
-          }
-        });
-        flashcardsList.appendChild(li);
-      });
-    }
-
-    flashcardEl.addEventListener('click', () => {
-      if (!flashcards.length) return;
-      isFront = !isFront;
-      flashcardEl.classList.toggle('flipped', !isFront);
-    });
-
-    flashcardContainer.addEventListener('keydown', e => {
-      if (flashcards.length === 0) return;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-        currentFlashcardIndex++;
-        isFront = true;
-        renderFlashcard(currentFlashcardIndex);
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-        currentFlashcardIndex--;
-        isFront = true;
-        renderFlashcard(currentFlashcardIndex);
-      } else if (e.key === ' ') {
-        e.preventDefault();
-        isFront = !isFront;
-        flashcardEl.classList.toggle('flipped', !isFront);
-      }
-    });
-
-    flashcardForm.addEventListener('submit', (ev) => {
-      ev.preventDefault();
-      const q = flashcardQuestion.value.trim();
-      const a = flashcardAnswer.value.trim();
-      if (!q || !a) {
-        alert('Please fill both question and answer');
-        return;
-      }
-      flashcards.push({ question: q, answer: a });
-      saveFlashcards();
-      renderFlashcardsList();
-      currentFlashcardIndex = flashcards.length - 1;
-      isFront = true;
-      renderFlashcard(currentFlashcardIndex);
-      flashcardForm.reset();
-      showToast('Flashcard added');
-    });
-
-    flashcardClearBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to clear all flashcards?')) {
-        flashcards = [];
-        saveFlashcards();
-        renderFlashcardsList();
-        renderFlashcard(0);
-        showToast('All flashcards cleared');
-      }
-    });
-
-    // -------------- Topics Encoder --------------
-    const topicsForm = document.getElementById('topics-form');
-    const topicTitleInput = document.getElementById('topic-title');
-    const topicContentInput = document.getElementById('topic-content');
-    const topicsListEl = document.getElementById('topics-list');
-
-    let topics = [];
-
-    function saveTopics() {
-      localStorage.setItem(STORAGE_KEYS.topics, JSON.stringify(topics));
-    }
-    function loadTopics() {
-      const data = localStorage.getItem(STORAGE_KEYS.topics);
-      topics = data ? JSON.parse(data) : [];
-    }
-    function renderTopics() {
-      topicsListEl.innerHTML = '';
-      topics.forEach((topic, i) => {
-        const li = document.createElement('li');
-        li.style.background = '#2563ebcc';
-        li.style.borderRadius = '14px';
-        li.style.padding = '10px 16px';
-        li.style.marginBottom = '10px';
-        li.style.boxShadow = '0 0 8px rgba(37, 99, 235, 0.4)';
-        li.style.userSelect = 'none';
-
-        const title = document.createElement('strong');
-        title.textContent = topic.title;
-        title.style.display = 'block';
-        title.style.marginBottom = '6px';
-        title.style.color = '#38bdf8';
-
-        const content = document.createElement('div');
-        content.textContent = topic.details;
-
-        // Delete btn
-        const delBtn = document.createElement('span');
-        delBtn.className = 'material-icons';
-        delBtn.textContent = 'delete';
-        delBtn.style.float = 'right';
-        delBtn.style.cursor = 'pointer';
-        delBtn.setAttribute('role', 'button');
-        delBtn.setAttribute('aria-label', 'Delete topic');
-        delBtn.addEventListener('click', () => {
-          topics.splice(i, 1);
-          saveTopics();
-          renderTopics();
-          showToast('Topic deleted');
-        });
-
-        li.appendChild(delBtn);
-        li.appendChild(title);
-        li.appendChild(content);
-        topicsListEl.appendChild(li);
-      });
-    }
-    topicsForm.addEventListener('submit', ev => {
-      ev.preventDefault();
-      const title = topicTitleInput.value.trim();
-      const details = topicContentInput.value.trim();
-      if (!title || !details) {
-        alert('Please fill title and details');
-        return;
-      }
-      topics.push({ title, details });
-      saveTopics();
-      renderTopics();
-      topicsForm.reset();
-      showToast('Topic added');
-    });
-
-    // -------------- Class Schedule --------------
-    const scheduleForm = document.getElementById('schedule-form');
-    const scheduleListEl = document.getElementById('schedule-list');
-    const clearScheduleBtn = document.getElementById('clear-schedule');
-
-    let scheduleItems = [];
-
-    function saveSchedule() {
-      localStorage.setItem(STORAGE_KEYS.schedule, JSON.stringify(scheduleItems));
-    }
-    function loadSchedule() {
-      const data = localStorage.getItem(STORAGE_KEYS.schedule);
-      scheduleItems = data ? JSON.parse(data) : [];
-    }
-    function renderSchedule() {
-      scheduleListEl.innerHTML = '';
-      scheduleItems.forEach((item, i) => {
-        const div = document.createElement('div');
-        div.className = 'schedule-item';
-
-        const day = document.createElement('div');
-        day.className = 'day';
-        day.textContent = `${item.day} - ${item.className}`;
-
-        const time = document.createElement('div');
-        time.className = 'time';
-        time.textContent = `Time: ${item.time}`;
-
-        const location = document.createElement('div');
-        location.className = 'location';
-        location.textContent = `Location: ${item.location || 'N/A'}`;
-
-        const delBtn = document.createElement('span');
-        delBtn.className = 'material-icons';
-        delBtn.textContent = 'delete';
-        delBtn.setAttribute('role', 'button');
-        delBtn.setAttribute('aria-label', 'Delete class schedule');
-        delBtn.style.cursor = 'pointer';
-        delBtn.style.float = 'right';
-        delBtn.style.marginTop = '-38px';
-        delBtn.style.color = '#38bdf8';
-        delBtn.addEventListener('click', () => {
-          scheduleItems.splice(i, 1);
-          saveSchedule();
-          renderSchedule();
-          showToast('Class schedule deleted');
-        });
-
-        div.appendChild(delBtn);
-        div.appendChild(day);
-        div.appendChild(time);
-        div.appendChild(location);
-        scheduleListEl.appendChild(div);
-      });
-    }
-    scheduleForm.addEventListener('submit', ev => {
-      ev.preventDefault();
-      const className = document.getElementById('class-name').value.trim();
-      const day = document.getElementById('class-day').value.trim();
-      const time = document.getElementById('class-time').value.trim();
-      const location = document.getElementById('class-location').value.trim();
-      if (!className || !day || !time) {
-        alert('Please fill required fields: Class Name, Day, and Time');
-        return;
-      }
-      scheduleItems.push({ className, day, time, location });
-      saveSchedule();
-      renderSchedule();
-      scheduleForm.reset();
-      showToast('Class added');
-    });
-    clearScheduleBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to clear all class schedules?')) {
-        scheduleItems = [];
-        saveSchedule();
-        renderSchedule();
-        showToast('Class schedules cleared');
-      }
-    });
-
-    // -------------- Quiz Organizer --------------
-    const quizForm = document.getElementById('quiz-form');
-    const quizListTbody = document.getElementById('quiz-list');
-    const clearQuizBtn = document.getElementById('clear-quiz');
-
-    let quizzes = [];
-
-    function saveQuizzes() {
-      localStorage.setItem(STORAGE_KEYS.quiz, JSON.stringify(quizzes));
-    }
-    function loadQuizzes() {
-      const data = localStorage.getItem(STORAGE_KEYS.quiz);
-      quizzes = data ? JSON.parse(data) : [];
-    }
-    function renderQuizzes() {
-      quizListTbody.innerHTML = '';
-      quizzes.forEach((quiz, index) => {
-        const tr = document.createElement('tr');
-
-        const dateTime = new Date(quiz.datetime);
-        const formattedDate = dateTime.toLocaleString();
-
-        tr.innerHTML = `
-          <td>${quiz.name}</td>
-          <td>${formattedDate}</td>
-          <td>${quiz.className || ''}</td>
-          <td>${quiz.emailReminder ? quiz.emailReminder : 'None'}</td>
-          <td class="table-actions">
-            <button aria-label="Delete quiz" title="Delete Quiz" data-index="${index}"><span class="material-icons">delete</span></button>
-          </td>
-        `;
-        quizListTbody.appendChild(tr);
-      });
-
-      // Add event listeners to delete buttons
-      quizListTbody.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', (ev) => {
-          const idx = ev.currentTarget.dataset.index;
-          quizzes.splice(idx,1);
-          saveQuizzes();
-          renderQuizzes();
-          showToast('Quiz deleted');
-        });
-      });
-    }
-    quizForm.addEventListener('submit', ev => {
-      ev.preventDefault();
-      const name = document.getElementById('quiz-name').value.trim();
-      const datetime = document.getElementById('quiz-date').value;
-      const className = document.getElementById('quiz-class').value.trim();
-      const email = document.getElementById('quiz-email').value.trim();
-
-      if (!name || !datetime) {
-        alert('Please fill quiz name and date/time');
-        return;
-      }
-      quizzes.push({
-        name,
-        datetime,
-        className,
-        emailReminder: email || null
-      });
-      saveQuizzes();
-      renderQuizzes();
-      quizForm.reset();
-      showToast('Quiz added');
-
-      if (email) {
-        // Placeholder for email reminder integration
-        notifyEmailReminder(email, `Reminder: Quiz "${name}" scheduled on ${new Date(datetime).toLocaleString()}`);
-      }
-    });
-    clearQuizBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to clear all quizzes?')) {
-        quizzes = [];
-        saveQuizzes();
-        renderQuizzes();
-        showToast('Quizzes cleared');
-      }
-    });
-
-    // -------------- Major Exams --------------
-    const examForm = document.getElementById('exam-form');
-    const examListTbody = document.getElementById('exam-list');
-    const clearExamsBtn = document.getElementById('clear-exams');
-
-    let exams = [];
-
-    function saveExams() {
-      localStorage.setItem(STORAGE_KEYS.exams, JSON.stringify(exams));
-    }
-    function loadExams() {
-      const data = localStorage.getItem(STORAGE_KEYS.exams);
-      exams = data ? JSON.parse(data) : [];
-    }
-    function renderExams() {
-      examListTbody.innerHTML = '';
-      exams.forEach((exam, index) => {
-        const tr = document.createElement('tr');
-        const dateTime = new Date(exam.datetime);
-        const formattedDate = dateTime.toLocaleString();
-        tr.innerHTML = `
-          <td>${exam.name}</td>
-          <td>${formattedDate}</td>
-          <td>${exam.emailReminder ? exam.emailReminder : 'None'}</td>
-          <td class="table-actions">
-            <button aria-label="Delete exam" title="Delete Exam" data-index="${index}"><span class="material-icons">delete</span></button>
-          </td>
-        `;
-        examListTbody.appendChild(tr);
-      });
-      examListTbody.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', (ev) => {
-          const idx = ev.currentTarget.dataset.index;
-          exams.splice(idx, 1);
-          saveExams();
-          renderExams();
-          showToast('Exam deleted');
-        });
-      });
-    }
-    examForm.addEventListener('submit', ev => {
-      ev.preventDefault();
-      const name = document.getElementById('exam-name').value.trim();
-      const datetime = document.getElementById('exam-date').value;
-      const email = document.getElementById('exam-email').value.trim();
-
-      if (!name || !datetime) {
-        alert('Please fill exam name and date/time');
-        return;
-      }
-      exams.push({
-        name,
-        datetime,
-        emailReminder: email || null
-      });
-      saveExams();
-      renderExams();
-      examForm.reset();
-      showToast('Exam added');
-
-      if (email) {
-        // Placeholder for email reminder integration
-        notifyEmailReminder(email, `Reminder: Exam "${name}" scheduled on ${new Date(datetime).toLocaleString()}`);
-      }
-    });
-    clearExamsBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to clear all exams?')) {
-        exams = [];
-        saveExams();
-        renderExams();
-        showToast('Exams cleared');
-      }
-    });
-
-    // -------------- Email Reminder Simulation --------------
-    // Note: Actual email reminders require backend implementation.
-    // Here we simulate scheduling and notify user immediately.
-    function notifyEmailReminder(email, message) {
-      showToast(`Email reminder set for ${email}:\n${message}`);
-      // To integrate with backend and MongoDB:
-      // Send POST request to your server API with email and message to schedule reminder
-    }
-
-    // Load all data on app start
-    function loadAll() {
-      loadTodo(); renderTodo();
-      loadGwa(); renderGwa();
-      loadTimer();
-      loadFlashcards(); renderFlashcardsList(); renderFlashcard(currentFlashcardIndex);
-      loadTopics(); renderTopics();
-      loadSchedule(); renderSchedule();
-      loadQuizzes(); renderQuizzes();
-      loadExams(); renderExams();
-    }
-    loadAll();
-
-    // Accessibility: Keyboard shortcut to toggle next/prev flashcard when in flashcards tab
-    document.addEventListener('keydown', e => {
-      if (!tabs.flashcards.classList.contains('active')) return;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        currentFlashcardIndex++;
-        isFront = true;
-        renderFlashcard(currentFlashcardIndex);
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        currentFlashcardIndex--;
-        isFront = true;
-        renderFlashcard(currentFlashcardIndex);
-      } else if (e.key === ' ') {
-        e.preventDefault();
-        isFront = !isFront;
-        flashcardEl.classList.toggle('flipped', !isFront);
-      }
-    });
-
-    // Accessibility: Focus trapping inside flashcard container on tab-flashcards
-    // (We keep it simple and rely on browser default)
-
-  </script>
+            <button aria-controls="tab-gwa" id="btn-gwa" role="tab" tabindex="-1" title="GWA Calculator">
+                <span aria-hidden="true" class="material-icons">calculate</span> GWA
+            </button>
+            <button aria-controls="tab-timer" id="btn-timer" role="tab" tabindex="-1" title="Timer">
+                <span aria-hidden="true" class="material-icons">timer</span> Timer
+            </button>
+            <button aria-controls="tab-flashcards" id="btn-flashcards" role="tab" tabindex="-1" title="Flashcards">
+                <span aria-hidden="true" class="material-icons">auto_stories</span> Flashcards
+            </button>
+            <button aria-controls="tab-topics" id="btn-topics" role="tab" tabindex="-1" title="Topics Encoder">
+                <span aria-hidden="true" class="material-icons">subject</span> Topics
+            </button>
+            <button aria-controls="tab-schedule" id="btn-schedule" role="tab" tabindex="-1" title="Class Schedule">
+                <span aria-hidden="true" class="material-icons">event</span> Schedule
+            </button>
+            <button aria-controls="tab-quiz" id="btn-quiz" role="tab" tabindex="-1" title="Quiz Organizer">
+                <span aria-hidden="true" class="material-icons">quiz</span> Quiz
+            </button>
+            <button aria-controls="tab-exams" id="btn-exams" role="tab" tabindex="-1" title="Major Exams">
+                <span aria-hidden="true" class="material-icons">school</span> Exams
+            </button>
+            <button aria-controls="none" aria-label="Logout" id="btn-logout" role="button" style="margin-top:auto; background:#dc2626; color:white;" tabindex="-1" title="Logout"><span aria-hidden="true" class="material-icons">logout</span> Logout</button>
+        </nav>
+        <section class="content" tabindex="0">
+            <div aria-labelledby="btn-todo" class="tab-content active" id="tab-todo" role="tabpanel">
+                <h2>To-Do List</h2>
+                <form aria-label="Add new To-Do item" id="todo-form">
+                    <label for="todo-input">New task</label>
+                    <input aria-required="true" autocomplete="off" id="todo-input" placeholder="Enter new task..." type="text"/>
+                    <button aria-label="Add Task" class="btn" type="submit">
+                        <span aria-hidden="true" class="material-icons">add</span> Add
+                    </button>
+                </form>
+                <ul aria-label="To-Do items list" aria-live="polite" aria-relevant="additions removals" class="todo-list" id="todo-list"></ul>
+                <button aria-label="Clear completed tasks" class="btn" id="clear-completed" style="margin-top:8px;">Clear Completed</button>
+            </div>
+            <div aria-labelledby="btn-gwa" class="tab-content" id="tab-gwa" role="tabpanel">
+                <h2>GWA Calculator</h2>
+                <div id="gwa-form">
+                    <form aria-label="Add a course grade">
+                        <label for="course-name">Course Name</label>
+                        <input aria-required="true" autocomplete="off" id="course-name" placeholder="e.g., Math 101" type="text"/>
+                        <label for="course-grade">Grade (1.0 - 5.0)</label>
+                        <input aria-required="true" id="course-grade" max="5" min="1" placeholder="e.g., 1.75" step="0.01" type="number"/>
+                        <button aria-label="Add Course and Grade" class="btn" type="submit">
+                            <span aria-hidden="true" class="material-icons">add</span> Add
+                        </button>
+                    </form>
+                </div>
+                <div id="gwa-courses-container" style="margin-top:16px;">
+                    <h3>Courses &amp; Grades</h3>
+                    <ul aria-label="Courses and grades list" aria-live="polite" class="todo-list" id="gwa-courses" style="max-height:250px; overflow-y:auto;"></ul>
+                </div>
+                <div style="margin-top: 16px;">
+                    <strong>Your GWA:</strong> <span aria-live="polite" id="gwa-result">N/A</span>
+                    <button class="btn" id="clear-gwa" style="margin-left: 16px;">Clear All</button>
+                </div>
+            </div>
+            <div aria-labelledby="btn-timer" class="tab-content" id="tab-timer" role="tabpanel">
+                <h2>Timer</h2>
+                <div aria-label="Study timer" class="timer-container">
+                    <div aria-atomic="true" aria-live="polite" aria-relevant="text" class="timer-display" id="timer-display">00:00:00</div>
+                    <div class="timer-controls">
+                        <input aria-label="Add minutes" class="timer-add-input" id="timer-add-minutes" max="180" min="1" type="number" value="25"/>
+                        <button aria-label="Add minutes to timer" class="btn" id="timer-add-btn">Add</button>
+                        <button aria-label="Start or Pause Timer" class="btn" id="timer-start-btn">Start/Pause</button>
+                        <button aria-label="Reset Timer" class="btn" id="timer-reset-btn">Reset</button>
+                    </div>
+                </div>
+            </div>
+            <div aria-labelledby="btn-flashcards" class="tab-content" id="tab-flashcards" role="tabpanel">
+                <h2>Flashcard Maker</h2>
+                <div aria-label="Flashcard" aria-pressed="false" class="flashcard-container" role="button" tabindex="0">
+                    <div aria-live="polite" class="flashcard" id="flashcard">
+                        <div class="front">Click to add question</div>
+                        <div class="back">Click to add answer</div>
+                    </div>
+                </div>
+                <form aria-label="Create flashcard" class="flashcard-form" id="flashcard-form">
+                    <label for="flashcard-question">Question</label>
+                    <textarea aria-required="true" id="flashcard-question" placeholder="Enter question..."></textarea>
+                    <label for="flashcard-answer">Answer</label>
+                    <textarea aria-required="true" id="flashcard-answer" placeholder="Enter answer..."></textarea>
+                    <button aria-label="Add Flashcard" class="btn" type="submit">Add Flashcard</button>
+                    <button aria-label="Clear Flashcards" class="btn" id="flashcard-clear" style="background: #dc2626;" type="button">Clear All</button>
+                </form>
+                <div style="margin-top: 24px;">
+                    <h3>Flashcards</h3>
+                    <ul aria-label="Flashcards list" aria-live="polite" class="todo-list" id="flashcards-list"></ul>
+                </div>
+            </div>
+            <div aria-labelledby="btn-topics" class="tab-content" id="tab-topics" role="tabpanel">
+                <h2>Topics Encoder</h2>
+                <form aria-label="Add topics" id="topics-form">
+                    <label for="topic-title">Title</label>
+                    <input aria-required="true" id="topic-title" placeholder="Enter topic title..." type="text"/>
+                    <label for="topic-content">Details</label>
+                    <textarea aria-required="true" id="topic-content" placeholder="Enter topic details..."></textarea>
+                    <button aria-label="Add Topic" class="btn" type="submit">Add Topic</button>
+                </form>
+                <div style="margin-top:16px;">
+                    <h3>Topics List</h3>
+                    <ul aria-label="Topics list" aria-live="polite" class="todo-list" id="topics-list"></ul>
+                </div>
+            </div>
+            <div aria-labelledby="btn-schedule" class="tab-content" id="tab-schedule" role="tabpanel">
+                <h2>Class Schedule Maker</h2>
+                <form aria-label="Add class schedule" id="schedule-form">
+                    <label for="class-name">Class Name</label>
+                    <input aria-required="true" id="class-name" placeholder="e.g., Math 101" type="text"/>
+                    <label for="class-day">Day of Week</label>
+                    <select aria-required="true" id="class-day">
+                        <option disabled="" selected="" value="">Select day</option>
+                        <option>Monday</option>
+                        <option>Tuesday</option>
+                        <option>Wednesday</option>
+                        <option>Thursday</option>
+                        <option>Friday</option>
+                        <option>Saturday</option>
+                        <option>Sunday</option>
+                    </select>
+                    <label for="class-time">Time</label>
+                    <input aria-required="true" id="class-time" placeholder="e.g., 9:00 AM - 10:30 AM" type="text"/>
+                    <label for="class-location">Location</label>
+                    <input id="class-location" placeholder="e.g., Room 302" type="text"/>
+                    <button aria-label="Add Class Schedule" class="btn" type="submit">Add Class</button>
+                </form>
+                <div style="margin-top: 24px;">
+                    <h3>Class Schedules</h3>
+                    <div aria-label="Class schedules list" aria-live="polite" class="class-schedule" id="schedule-list"></div>
+                    <button aria-label="Clear All Class Schedules" class="btn" id="clear-schedule" style="margin-top: 12px;">Clear All</button>
+                </div>
+            </div>
+            <div aria-labelledby="btn-quiz" class="tab-content" id="tab-quiz" role="tabpanel">
+                <h2>Quiz Organizer</h2>
+                <form aria-label="Add new quiz" id="quiz-form">
+                    <label for="quiz-name">Quiz Name</label>
+                    <input aria-required="true" id="quiz-name" placeholder="e.g., Math Quiz 1" type="text"/>
+                    <label for="quiz-date">Date &amp; Time</label>
+                    <input aria-required="true" id="quiz-date" type="datetime-local"/>
+                    <label for="quiz-class">Class Name</label>
+                    <input id="quiz-class" placeholder="e.g., Math 101" type="text"/>
+                    <button aria-label="Add Quiz" class="btn" type="submit">Add Quiz</button>
+                </form>
+                <div style="margin-top: 24px;">
+                    <h3>Upcoming Quizzes</h3>
+                    <table aria-label="Quiz schedule" aria-live="polite">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Date/Time</th>
+                                <th>Class</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quiz-list"></tbody>
+                    </table>
+                    <button aria-label="Clear All Quizzes" class="btn" id="clear-quiz" style="margin-top: 12px;">Clear All</button>
+                </div>
+            </div>
+            <div aria-labelledby="btn-exams" class="tab-content" id="tab-exams" role="tabpanel">
+                <h2>Major Exams</h2>
+                <form aria-label="Add major exam" id="exam-form">
+                    <label for="exam-name">Exam Name</label>
+                    <input aria-required="true" id="exam-name" placeholder="e.g., Final Exams" type="text"/>
+                    <label for="exam-date">Date &amp; Time</label>
+                    <input aria-required="true" id="exam-date" type="datetime-local"/>
+                    <button aria-label="Add Exam" class="btn" type="submit">Add Exam</button>
+                    </form>
+                <div style="margin-top: 24px;">
+                    <h3>Upcoming Exams</h3>
+                    <table aria-label="Major exams table" aria-live="polite">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Date/Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="exam-list"></tbody>
+                    </table>
+                    <button aria-label="Clear All Exams" class="btn" id="clear-exams" style="margin-top: 12px;">Clear All</button>
+                </div>
+            </div>
+        </section>
+    </main>
+    <div aria-atomic="true" aria-live="assertive" id="toast" role="alert"></div>
+    <script src="MainPage.js" type="module"></script>
 </body>
 </html>
-

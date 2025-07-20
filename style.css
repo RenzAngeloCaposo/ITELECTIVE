@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100..900&display=swap');
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+    text-decoration: none;
+    list-style: none;
+}
+.container {
+    position: relative;
+    width: 850px;
+    height: 550px;
+    background: #fff;
+    margin: 20px auto;
+    border-radius: 30px;
+    box-shadow: 0 0 30px #00000033;
+    overflow: hidden;
+}
+h1 {
+    font-size: 36px;
+    margin: -10px 0;
+}
+p {
+    font-size: 14.5px;
+    margin: 15px 0;
+}
+.form-box {
+    position: absolute;
+    right: 0;
+    width: 50%;
+    height: 100%;
+    background: #fff;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 40px;
+    z-index: 1;
+    transition: 0.6s ease-in-out;
+}
+.input-box {
+    position: relative;
+    margin: 30px 0;
+    width: 100%;
+}
+input {
+    width: 100%;
+    padding: 13px 50px 13px 20px;
+    background: #eee;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    color: #333;
+    font-weight: 500;
+}
+input::placeholder {
+    color: #888;
+    font-weight: 400;
+}
+.input-box i {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+}
+.forgot-link {
+    margin: -15px 0 15px;
+}
+.forgot-link a {
+    font-size: 14.5px;
+    color: #333;
+}
+.btn {
+    width: 100%;
+    height: 40px;
+    background: #749ec7;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #0000001a;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #fff;
+    font-weight: 600;
+    margin-top: 10px;
+}
+/* Removed .social-icons and .social-icons a rules */
+.toggle-box {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: #7494ec;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 0;
+    border-radius: 30px;
+    transition: 1.2s ease-in-out;
+}
+.toggle-panel {
+    width: 50%;
+    text-align: center;
+    color: #fff;
+    padding: 40px;
+}
+.toggle-panel .btn {
+    width: 160px;
+    height: 46px;
+    background: transparent;
+    border: 2px solid #fff;
+    color: #fff;
+}
+.form-box.login, .form-box.register {
+    transition: all 0.6s ease-in-out;
+}
+.container.active .form-box.login {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-100%);
+}
+.form-box.register {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(100%);
+}
+.container.active .form-box.register {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+}
